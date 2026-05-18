@@ -1,4 +1,4 @@
-name: Free GPT-4 API (ChatAnywhere)
+name: Llama 3.1 via GitHub Models
 
 on:
   workflow_dispatch:
@@ -8,20 +8,24 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      models: read  # مهم: دسترسی به GitHub Models
+    
     steps:
       - uses: actions/checkout@v4
       
-      - name: Call free GPT-4 API
+      - name: Call Llama 3.1 via GitHub API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -s "https://api.chatanywhere.tech/v1/chat/completions" \
+          curl -s "https://models.inference.github.io/chat/completions" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer sk-2pTwqS9p8RupyD4b74kKACJkMYKuR0dsQwNvwtaeH8R8YOb0" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
             -d '{
-              "model": "gpt-4o-mini",
+              "model": "Meta-Llama-3.1-8B-Instruct",
               "messages": [{"role": "user", "content": "سلام"}]
             }' | jq -r '.choices[0].message.content' > chat.i
       
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update chat.i"
+          commit_message: "Update chat.i with Llama 3.1 response"
           file_pattern: "chat.i"
