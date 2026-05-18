@@ -1,31 +1,75 @@
-name: Llama 3.1 via GitHub Models
+name: Local LLM - No API, Just Download & Run
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # فقط دستی اجرا کن
 
 jobs:
-  chat:
+  llama-local:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      models: read  # مهم: دسترسی به GitHub Models
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Call Llama 3.1 via GitHub API
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # مرحله 1: نصب ابزارهای مورد نیاز
+      - name: Install dependencies
         run: |
-          curl -s "https://models.inference.github.io/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -d '{
-              "model": "Meta-Llama-3.1-8B-Instruct",
-              "messages": [{"role": "user", "content": "سلام"}]
-            }' | jq -r '.choices[0].message.content' > chat.i
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
       
+      # مرحله 2: کلون و build کردن llama.cpp
+      - name: Build llama.cpp
+        run: |
+          git clone https://github.com/ggerganov/llama.cpp
+          cd llama.cpp
+          mkdir build && cd build
+          cmake .. -DBUILD_SHARED_LIBS=OFF
+          cmake --build . --config Release -j$(nproc)
+          # copy binary to PATH
+          sudo cp bin/server /usr/local/bin/llama-server
+      
+      # مرحله 3: دانلود یک مدل کوچک (حدود 600-800MB)
+      - name: Download model (TinyLlama - ~600MB)
+        run: |
+          mkdir -p models
+          # یک مدل کوچک و سریع از Hugging Face
+          curl -L -o models/tinyllama.Q4_K_M.gguf \
+            "https://huggingface.co/TheBloke/TinyLlama-1.1B-GGUF/resolve/main/tinyllama-1.1b.Q4_K_M.gguf"
+      
+      # مرحله 4: اجرای سرور llama.cpp در پس‌زمینه
+      - name: Start llama-server
+        run: |
+          llama-server -m models/tinyllama.Q4_K_M.gguf \
+            --port 8080 \
+            --host 0.0.0.0 \
+            -c 512 \
+            -ngl 0 &
+          sleep 10  # صبر کن تا سرور بالا بیاد
+          curl -s http://localhost:8080/health || echo "Server started"
+      
+      # مرحله 5: ارسال prompt و گرفتن جواب
+      - name: Send prompt and save response
+        run: |
+          echo "=== Response at $(date) ===" > chat.i
+          echo "" >> chat.i
+          
+          curl -s -X POST http://localhost:8080/completion \
+            -H "Content-Type: application/json" \
+            -d '{
+              "prompt": "سلام! لطفاً یک پاسخ کوتاه و مفید بده. بگو حالت چطوره؟",
+              "n_predict": 100,
+              "temperature": 0.7,
+              "stream": false
+            }' | jq -r '.content' >> chat.i
+          
+          # اگر جواب نگرفتی، خطا رو ذخیره کن
+          if [ ! -s chat.i ]; then
+            echo "Server response failed" >> chat.i
+          fi
+      
+      # مرحله 6: ذخیره نتیجه در ریپازیتوری
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update chat.i with Llama 3.1 response"
+          commit_message: "Update chat.i with local LLM response"
           file_pattern: "chat.i"
