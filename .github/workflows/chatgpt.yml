@@ -1,4 +1,4 @@
-name: ChatGPT No Login (Via AnonChatGPT)
+name: Free GPT-4 API (ChatAnywhere)
 
 on:
   workflow_dispatch:
@@ -11,12 +11,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Send message to AnonChatGPT
+      - name: Call free GPT-4 API
         run: |
-          curl -s "https://anonchatgpt.com/api/chat" \
-            -X POST \
+          curl -s "https://api.chatanywhere.tech/v1/chat/completions" \
             -H "Content-Type: application/json" \
-            -d '{"message": "سلام"}' > chat.i
+            -H "Authorization: Bearer sk-2pTwqS9p8RupyD4b74kKACJkMYKuR0dsQwNvwtaeH8R8YOb0" \
+            -d '{
+              "model": "gpt-4o-mini",
+              "messages": [{"role": "user", "content": "سلام"}]
+            }' | jq -r '.choices[0].message.content' > chat.i
       
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
