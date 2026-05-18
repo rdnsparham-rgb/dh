@@ -1,4 +1,4 @@
-name: ChatGPT Guest Mode
+name: ChatGPT Guest Mode - Full
 
 on:
   workflow_dispatch:
@@ -17,14 +17,29 @@ jobs:
           npm install -g agent-browser
           agent-browser install
       
-      - name: Run ChatGPT automation
+      - name: Send message and get response
         run: |
           agent-browser open "https://chatgpt.com"
           sleep 5
-          echo "Site opened at $(date)" > chat.i
+          
+          # تایپ کردن "سلام" در کادر متن
+          agent-browser type --selector "textarea" "سلام"
+          sleep 2
+          
+          # کلیک روی دکمه ارسال
+          agent-browser click --selector "button" --text "Send" || agent-browser click --selector "[data-testid='send-button']" || agent-browser click --selector "button:has(svg)"
+          sleep 15
+          
+          # گرفتن متن پاسخ
+          agent-browser get-text --selector "[data-message-author-role='assistant']" > response.txt
+          
+          # ذخیره در فایل chat.i
+          echo "Response at $(date):" > chat.i
+          cat response.txt >> chat.i
+          
           agent-browser close
       
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update chat.i"
+          commit_message: "Update chat.i with ChatGPT response"
           file_pattern: "chat.i"
