@@ -1,55 +1,30 @@
-name: ChatGPT Guest Mode Automation
+name: ChatGPT Guest Mode
 
 on:
-  workflow_dispatch:  # فقط با دکمه Run workflow اجرا می‌شود
+  workflow_dispatch:
 
 jobs:
-  chat-as-guest:
+  chat:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # برای آپدیت کردن فایل chat.i
+      contents: write
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js and agent-browser
+      - name: Install agent-browser
         run: |
           npm install -g agent-browser
           agent-browser install
       
-      - name: Automate ChatGPT (No Login)
+      - name: Run ChatGPT automation
         run: |
-          # 1. باز کردن سایت ChatGPT (حالت گوئست)
           agent-browser open "https://chatgpt.com"
-          sleep 3
-          
-          # 2. (اختیاری اما مفید) بستن پنجره پیشنهاد لاگین اگر ظاهر شد
-          agent-browser click --selector "button" --text "Not now" || echo "No login popup found"
-          
-          # 3. پیدا کردن جای نوشتن پیام و تایپ کردن "سلام"
-          # در حالت گوئست، المنت تکس اریا احتمالا همان است
-          agent-browser type --selector "textarea" "سلام"
-          sleep 1
-          
-          # 4. کلیک روی دکمه ارسال (آیکون فلش یا گزینه submit)
-          agent-browser click --selector "button" --match "submit" || agent-browser click --selector "[data-testid='send-button']"
-          sleep 2
-          
-          # 5. منتظر بمان تا پاسخ در حال تایپ شدن است و تمام شود
-          sleep 15
-          
-          # 6. متن پاسخ را از صفحه بگیر و در یک فایل ذخیره کن
-          agent-browser get-text --selector ".markdown" > chat_temp.txt
+          sleep 5
+          echo "Site opened at $(date)" > chat.i
           agent-browser close
-          
-          # 7. تاریخ و پاسخ را داخل فایل chat.i بریز
-          echo "Response fetched at $(date):" > chat.i
-          cat chat_temp.txt >> chat.i
-          echo "" >> chat.i
-          echo "---" >> chat.i
       
-      - name: Update GitHub Repository
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update chat.i with guest mode response"
+          commit_message: "Update chat.i"
           file_pattern: "chat.i"
