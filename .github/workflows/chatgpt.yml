@@ -1,32 +1,15 @@
-name: Simple Chat API
-
-on:
-  workflow_dispatch:
-
+name: Free AI
+on: workflow_dispatch
 jobs:
   chat:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Call free AI API
-        run: |
-          # استفاده از API رایگان (بدون لاگین)
-          curl -s "https://api.kobold.ai/generate" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "prompt": "User: سلام\nAssistant:",
-              "max_tokens": 100
-            }' > result.txt
-          
-          echo "Chat at $(date):" > chat.i
-          echo "---" >> chat.i
-          cat result.txt >> chat.i
-      
+      - run: |
+          curl -s "https://api.groq.com/openai/v1/chat/completions" \
+            -H "Authorization: Bearer gsk_..." \
+            -d '{"model":"llama3-8b-8192","messages":[{"role":"user","content":"سلام"}]}' \
+            | jq -r '.choices[0].message.content' > chat.i
       - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Update chat.i"
-          file_pattern: "chat.i"
