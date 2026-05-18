@@ -1,7 +1,1 @@
-<html>
-<head><title>405 Not Allowed</title></head>
-<body>
-<center><h1>405 Not Allowed</h1></center>
-<hr><center>nginx/1.22.0 (Ubuntu)</center>
-</body>
-</html>
+null
