@@ -1,5 +1,8 @@
-name: Free AI
-on: workflow_dispatch
+name: ChatGPT No Login (Via AnonChatGPT)
+
+on:
+  workflow_dispatch:
+
 jobs:
   chat:
     runs-on: ubuntu-latest
@@ -7,9 +10,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          curl -s "https://api.groq.com/openai/v1/chat/completions" \
-            -H "Authorization: Bearer gsk_..." \
-            -d '{"model":"llama3-8b-8192","messages":[{"role":"user","content":"سلام"}]}' \
-            | jq -r '.choices[0].message.content' > chat.i
+      
+      - name: Send message to AnonChatGPT
+        run: |
+          curl -s "https://anonchatgpt.com/api/chat" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"message": "سلام"}' > chat.i
+      
       - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update chat.i"
+          file_pattern: "chat.i"
